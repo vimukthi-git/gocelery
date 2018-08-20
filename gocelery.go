@@ -50,16 +50,20 @@ func (cc *CeleryClient) StopWorker() {
 
 // Delay gets asynchronous result
 func (cc *CeleryClient) Delay(task string, args ...interface{}) (*AsyncResult, error) {
-	celeryTask := getTaskMessage(task)
+	celeryTask := NewTaskMessage(task, nil, 0)
 	celeryTask.Args = args
 	return cc.delay(celeryTask)
 }
 
 // DelayKwargs gets asynchronous results with argument map
 func (cc *CeleryClient) DelayKwargs(task string, args map[string]interface{}) (*AsyncResult, error) {
-	celeryTask := getTaskMessage(task)
+	celeryTask := NewTaskMessage(task, nil, 0)
 	celeryTask.Kwargs = args
 	return cc.delay(celeryTask)
+}
+
+func (cc *CeleryClient) ApplyAsync(taskMessage *TaskMessage) (*AsyncResult, error) {
+	return cc.delay(taskMessage)
 }
 
 func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
@@ -71,6 +75,7 @@ func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
 	celeryMessage := getCeleryMessage(encodedMessage)
 	defer releaseCeleryMessage(celeryMessage)
 	err = cc.broker.SendCeleryMessage(celeryMessage)
+	// TODO retry sending here based on a default policy or a one that is provided by the user
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +95,8 @@ type CeleryTask interface {
 	ParseKwargs(map[string]interface{}) error
 
 	// RunTask - define a method to run
+	// TODO provide a context object here so that for example a task can be retried based on some logic
+	// http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.retry
 	RunTask() (interface{}, error)
 }
 

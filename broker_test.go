@@ -5,10 +5,12 @@ import (
 	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func makeCeleryMessage() (*CeleryMessage, error) {
-	taskMessage := getTaskMessage("add")
+	t := time.Now()
+	taskMessage := NewTaskMessage("add", &t, 0)
 	taskMessage.Args = []interface{}{rand.Intn(10), rand.Intn(10)}
 	defer releaseTaskMessage(taskMessage)
 	encodedTaskMessage, err := taskMessage.Encode()

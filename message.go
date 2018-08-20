@@ -131,12 +131,18 @@ var taskMessagePool = sync.Pool{
 	},
 }
 
-func getTaskMessage(task string) *TaskMessage {
+// TODO eta handling is not implemented on the worker
+func NewTaskMessage(task string, eta *time.Time, retries int) *TaskMessage {
 	msg := taskMessagePool.Get().(*TaskMessage)
 	msg.Task = task
 	msg.Args = make([]interface{}, 0)
 	msg.Kwargs = make(map[string]interface{})
-	msg.ETA = time.Now().Format(time.RFC3339)
+	if eta == nil {
+		msg.ETA = time.Now().Format(time.RFC3339)
+	} else {
+		msg.ETA = eta.Format(time.RFC3339)
+	}
+	msg.Retries = retries
 	return msg
 }
 
