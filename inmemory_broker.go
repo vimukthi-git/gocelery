@@ -35,3 +35,9 @@ func (b *InMemoryBroker) Clear(m *CeleryMessage) error {
 	b.taskQueue = make([]*TaskMessage, 0)
 	return nil
 }
+
+func (b *InMemoryBroker) isEmpty() (bool) {
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+	return len(b.taskQueue) == 0
+}
