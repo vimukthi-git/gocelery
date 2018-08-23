@@ -89,7 +89,7 @@ func receiveMessages(ib *InMemoryBroker, resultChannel chan string) {
 		}
 		resultChannel <- msg.ID
 		// less than this and workers try to access invalid memory addresses
-		time.Sleep(50 * time.Microsecond)
+		time.Sleep(100 * time.Microsecond)
 	}
 }
 
