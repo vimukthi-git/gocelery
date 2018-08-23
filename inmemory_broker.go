@@ -29,7 +29,7 @@ func (b *InMemoryBroker) GetTaskMessage() (t *TaskMessage, e error) {
 	return t, nil
 }
 
-func (b *InMemoryBroker) Clear(m *CeleryMessage) error {
+func (b *InMemoryBroker) Clear() error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.taskQueue = make([]*TaskMessage, 0)
