@@ -67,12 +67,12 @@ func checkMessages(t *testing.T, resultChannel chan string, ids map[string]bool,
 	for i := 0; i < count; i++ {
 		received := <-resultChannel
 		if ok, _ := ids[received]; !ok {
-			t.Errorf("non recorded message", received, "")
+			t.Errorf("non recorded message %s", received)
 		}
 		counter++
 	}
 	if count != counter {
-		t.Errorf("all messages should have been received", count, 5)
+		t.Errorf("all messages [%v] should have been received [%v]", count, 5)
 	}
 }
 
