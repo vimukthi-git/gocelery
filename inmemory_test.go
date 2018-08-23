@@ -77,14 +77,16 @@ func checkMessages(t *testing.T, resultChannel chan string, ids map[string]bool,
 }
 
 func receiveMessages(ib *InMemoryBroker, resultChannel chan string) {
-	time.Sleep(100 * time.Millisecond)
+	// wait for messages to become available from masters, otherwise the workers will exit too early
+	time.Sleep(10 * time.Millisecond)
 	for ; !ib.isEmpty(); {
 		msg, err := ib.GetTaskMessage()
 		if err != nil {
 			log.Fatal(err)
 		}
 		resultChannel <- msg.ID
-		time.Sleep(100 * time.Millisecond)
+		// less than this and workers try to access invalid memory addresses
+		time.Sleep(50 * time.Microsecond)
 	}
 }
 
