@@ -86,6 +86,10 @@ func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
 // ResultMessage must be obtained using GetResultMessage()
 type CeleryTask interface {
 
+	// Copy - is used to safely create and execute a copy of a task (stateful)
+	// in a worker when there are multiple workers working on the same type of task but with different internal state.
+	Copy() (CeleryTask, error)
+
 	// ParseKwargs - define a method to parse kwargs
 	ParseKwargs(map[string]interface{}) error
 

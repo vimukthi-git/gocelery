@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
-	)
+)
 
 func multiply(a int, b int) int {
 	return a * b
@@ -16,6 +16,10 @@ func multiply(a int, b int) int {
 type multiplyKwargs struct {
 	a int
 	b int
+}
+
+func (m *multiplyKwargs) Copy() (CeleryTask, error) {
+	return &multiplyKwargs{m.a, m.b}, nil
 }
 
 func (m *multiplyKwargs) ParseKwargs(kwargs map[string]interface{}) error {

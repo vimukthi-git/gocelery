@@ -4,7 +4,7 @@ import "sync"
 
 type InMemoryBroker struct {
 	taskQueue []*TaskMessage
-	lock sync.RWMutex
+	lock      sync.RWMutex
 }
 
 func NewInMemoryBroker() *InMemoryBroker {
@@ -36,7 +36,7 @@ func (b *InMemoryBroker) Clear() error {
 	return nil
 }
 
-func (b *InMemoryBroker) isEmpty() (bool) {
+func (b *InMemoryBroker) isEmpty() bool {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	return len(b.taskQueue) == 0

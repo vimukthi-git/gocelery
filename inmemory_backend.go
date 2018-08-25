@@ -7,7 +7,7 @@ import (
 
 type InMemoryBackend struct {
 	ResultStore map[string]*ResultMessage
-	lock sync.RWMutex
+	lock        sync.RWMutex
 }
 
 func NewInMemoryBackend() *InMemoryBackend {
