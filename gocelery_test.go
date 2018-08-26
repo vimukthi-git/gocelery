@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"errors"
 )
 
 func multiply(a int, b int) int {
@@ -49,6 +50,33 @@ func (m *multiplyKwargs) RunTask() (interface{}, error) {
 	return result, nil
 }
 
+type stateFulTask struct{
+	copyerror bool
+	state map[string]interface{}
+}
+
+func (st *stateFulTask) Copy() (CeleryTask, error) {
+	if (st.copyerror) {
+		return nil, errors.New("dummy copying error")
+	}
+	newState := make(map[string]interface{})
+	for k,v := range st.state {
+		newState[k] = v
+	}
+	return &stateFulTask{st.copyerror, newState}, nil
+}
+
+func (st *stateFulTask) ParseKwargs(state map[string]interface{}) error {
+	// modify internal state to test race conditions
+	st.state = state
+	return nil
+}
+
+func (st *stateFulTask) RunTask() (interface{}, error) {
+	log.Print(st.state["val"])
+	return st.state["val"], nil
+}
+
 func getAMQPClient() (*CeleryClient, error) {
 	amqpBroker := NewAMQPCeleryBroker("amqp://")
 	amqpBackend := NewAMQPCeleryBackend("amqp://")
@@ -61,10 +89,10 @@ func getRedisClient() (*CeleryClient, error) {
 	return NewCeleryClient(redisBroker, redisBackend, 1)
 }
 
-func getInMemoryClient() (*CeleryClient, error) {
+func getInMemoryClient(numWorkers int) (*CeleryClient, error) {
 	inMemoryBroker := NewInMemoryBroker()
 	inMemoryBackend := NewInMemoryBackend()
-	return NewCeleryClient(inMemoryBroker, inMemoryBackend, 1)
+	return NewCeleryClient(inMemoryBroker, inMemoryBackend, numWorkers)
 }
 
 func getClients() ([]*CeleryClient, error) {
@@ -76,7 +104,7 @@ func getClients() ([]*CeleryClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	inMemoryClient, err := getInMemoryClient()
+	inMemoryClient, err := getInMemoryClient(1)
 	if err != nil {
 		return nil, err
 	}
@@ -194,6 +222,56 @@ func TestRegister(t *testing.T) {
 			return
 		}
 	}
+}
+
+// RUN this test with -race flag to see if there are race conditions
+func TestCeleryWorker_RunTaskTaskCopy(t *testing.T) {
+	kwargTaskName := generateUUID()
+	kwargTask := &stateFulTask{false, map[string]interface{}{"val": "should not mutate"}}
+
+	inMemoryClient, _ := getInMemoryClient(2)
+	inMemoryClient.Register(kwargTaskName, kwargTask)
+	inMemoryClient.StartWorker()
+
+	res1, _ := inMemoryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
+		"val": generateUUID(),
+	})
+
+	res2, _ := inMemoryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
+		"val": generateUUID(),
+	})
+
+	// following should not cause any race conditions with -race flag
+	// because the workers copy the tasks
+	res1.Get(10 * time.Second)
+	res2.Get(10 * time.Second)
+
+	if kwargTask.state["val"] != "should not mutate" {
+		t.Fail()
+	}
+
+	inMemoryClient.StopWorker()
+}
+
+func TestCeleryWorker_RunTaskTaskCopyError(t *testing.T) {
+	kwargTaskName := generateUUID()
+	kwargTask := &stateFulTask{true, map[string]interface{}{"val": "should not mutate"}}
+
+	inMemoryClient, _ := getInMemoryClient(2)
+	inMemoryClient.Register(kwargTaskName, kwargTask)
+	inMemoryClient.StartWorker()
+
+	res1, _ := inMemoryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
+		"val": generateUUID(),
+	})
+
+	res, _ := res1.Get(1 * time.Millisecond)
+	// there should not be any result
+	// TODO Update this test when there is a way to store execution errors
+	if res != nil {
+		t.Fail()
+	}
+	inMemoryClient.StopWorker()
 }
 
 /*
