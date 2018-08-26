@@ -1,13 +1,13 @@
 package gocelery
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"reflect"
 	"testing"
 	"time"
-	"errors"
 )
 
 func multiply(a int, b int) int {
@@ -50,17 +50,17 @@ func (m *multiplyKwargs) RunTask() (interface{}, error) {
 	return result, nil
 }
 
-type stateFulTask struct{
+type stateFulTask struct {
 	copyerror bool
-	state map[string]interface{}
+	state     map[string]interface{}
 }
 
 func (st *stateFulTask) Copy() (CeleryTask, error) {
-	if (st.copyerror) {
+	if st.copyerror {
 		return nil, errors.New("dummy copying error")
 	}
 	newState := make(map[string]interface{})
-	for k,v := range st.state {
+	for k, v := range st.state {
 		newState[k] = v
 	}
 	return &stateFulTask{st.copyerror, newState}, nil
