@@ -1,16 +1,16 @@
 package gocelery
 
 import (
-	"testing"
 	"log"
+	"testing"
 	"time"
 )
 
 func TestInMemoryBroker_Concurrency(t *testing.T) {
 	tests := []struct {
-		name string
-		numMasters int
-		numWorkers int
+		name                 string
+		numMasters           int
+		numWorkers           int
 		numMessagesPerMaster int
 	}{
 		{"singleMasterSingleWorker", 1, 1, 3},
@@ -82,7 +82,7 @@ func checkMessages(t *testing.T, resultChannel chan string, ids map[string]bool,
 func receiveMessages(ib *InMemoryBroker, resultChannel chan string) {
 	// wait for messages to become available from masters, otherwise the workers will exit too early
 	time.Sleep(10 * time.Millisecond)
-	for ; !ib.isEmpty(); {
+	for !ib.isEmpty() {
 		msg, err := ib.GetTaskMessage()
 		if err != nil {
 			log.Fatal(err)

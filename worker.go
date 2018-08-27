@@ -5,7 +5,7 @@ import (
 	"log"
 	"reflect"
 	"sync"
-	)
+)
 
 // CeleryWorker represents distributed task worker.
 // Not thread safe. Shouldn't be used from within multiple go routines.
@@ -116,6 +116,12 @@ func (w *CeleryWorker) RunTask(message *TaskMessage) (*ResultMessage, error) {
 	// convert to task interface
 	taskInterface, ok := task.(CeleryTask)
 	if ok {
+		// copy the task to avoid race conditions caused by task state
+		if taskInterfaceCpy, err := taskInterface.Copy(); err != nil {
+			return nil, err
+		} else {
+			taskInterface = taskInterfaceCpy
+		}
 		//log.Println("using task interface")
 		if err := taskInterface.ParseKwargs(message.Kwargs); err != nil {
 			return nil, err
