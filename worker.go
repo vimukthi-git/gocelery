@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"sync"
+	"time"
 )
 
 // CeleryWorker represents distributed task worker.
@@ -13,6 +14,7 @@ type CeleryWorker struct {
 	broker          CeleryBroker
 	backend         CeleryBackend
 	numWorkers      int
+	waitTimeMS		int
 	registeredTasks map[string]interface{}
 	taskLock        sync.RWMutex
 	stopChannel     chan struct{}
@@ -20,12 +22,13 @@ type CeleryWorker struct {
 }
 
 // NewCeleryWorker returns new celery worker
-func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int) *CeleryWorker {
+func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int, waitTimeMS int) *CeleryWorker {
 	return &CeleryWorker{
 		broker:          broker,
 		backend:         backend,
 		numWorkers:      numWorkers,
 		registeredTasks: make(map[string]interface{}),
+		waitTimeMS: 	 waitTimeMS,
 	}
 }
 
@@ -39,6 +42,7 @@ func (w *CeleryWorker) StartWorker() {
 		go func(workerID int) {
 			defer w.workWG.Done()
 			for {
+				time.Sleep(time.Duration(w.waitTimeMS) * time.Millisecond)
 				select {
 				case <-w.stopChannel:
 					return

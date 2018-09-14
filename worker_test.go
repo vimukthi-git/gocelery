@@ -17,7 +17,7 @@ func add(a int, b int) int {
 func newCeleryWorker(numWorkers int) *CeleryWorker {
 	broker := NewRedisCeleryBroker("redis://localhost:6379")
 	backend := NewRedisCeleryBackend("redis://localhost:6379")
-	celeryWorker := NewCeleryWorker(broker, backend, numWorkers)
+	celeryWorker := NewCeleryWorker(broker, backend, numWorkers, 1)
 	return celeryWorker
 }
 
@@ -25,7 +25,7 @@ func newCeleryWorker(numWorkers int) *CeleryWorker {
 func newInMemoryCeleryWorker(numWorkers int) *CeleryWorker {
 	broker := NewInMemoryBroker()
 	backend := NewInMemoryBackend()
-	celeryWorker := NewCeleryWorker(broker, backend, numWorkers)
+	celeryWorker := NewCeleryWorker(broker, backend, numWorkers, 1)
 	return celeryWorker
 }
 
