@@ -11,6 +11,14 @@
   branch = "master"
   name = "github.com/streadway/amqp"
 
+[[constraint]]
+  name = "github.com/syndtr/goleveldb"
+  revision = "f9080354173f192dfc8821931eacf9cfd6819253"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.2.2"
+
 [prune]
   go-tests = true
   unused-packages = true

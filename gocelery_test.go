@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func multiply(a int, b int) int {
@@ -95,24 +97,36 @@ func getInMemoryClient(numWorkers int) (*CeleryClient, error) {
 	return NewCeleryClient(inMemoryBroker, inMemoryBackend, numWorkers, 1)
 }
 
-func getClients() ([]*CeleryClient, error) {
+func getLevelDBClient(numWorkers int, db *leveldb.DB, queue string) (*CeleryClient, error) {
+	broker := NewLevelDBBroker(db, queue)
+	backend := NewLevelDBBackend(db)
+	return NewCeleryClient(broker, backend, numWorkers, 1)
+}
+
+func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 	redisClient, err := getRedisClient()
 	if err != nil {
 		return nil, err
 	}
-	amqpClient, err := getAMQPClient()
-	if err != nil {
-		return nil, err
-	}
-	inMemoryClient, err := getInMemoryClient(1)
+	//amqpClient, err := getAMQPClient()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//inMemoryClient, err := getInMemoryClient(1)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	levelDBClient, err := getLevelDBClient(1, db, queue)
 	if err != nil {
 		return nil, err
 	}
 
 	return []*CeleryClient{
 		redisClient,
-		amqpClient,
-		inMemoryClient,
+		//amqpClient,
+		//inMemoryClient,
+		levelDBClient,
 	}, nil
 }
 
@@ -122,9 +136,11 @@ func debugLog(client *CeleryClient, format string, args ...interface{}) {
 }
 
 func TestWorkerClient(t *testing.T) {
+	levelDB, funcC := getLevelDB(t)
+	defer funcC()
 
 	// prepare clients
-	celeryClients, err := getClients()
+	celeryClients, err := getClients(levelDB, "test")
 	if err != nil {
 		t.Errorf("failed to create clients")
 		return
@@ -207,7 +223,10 @@ func TestWorkerClient(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	celeryClients, err := getClients()
+	levelDB, funcC := getLevelDB(t)
+	defer funcC()
+
+	celeryClients, err := getClients(levelDB, "test")
 	if err != nil {
 		t.Errorf("failed to create CeleryClients: %v", err)
 		return

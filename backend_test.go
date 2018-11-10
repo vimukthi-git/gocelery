@@ -8,12 +8,14 @@ import (
 	"testing"
 )
 
-func getBackends() []CeleryBackend {
+func getBackends(t *testing.T) ([]CeleryBackend, func()) {
+	levelDB, funcC := getLevelDB(t)
 	return []CeleryBackend{
 		NewRedisCeleryBackend("redis://localhost:6379"),
 		NewAMQPCeleryBackend("amqp://"),
 		NewInMemoryBackend(),
-	}
+		NewLevelDBBackend(levelDB),
+	}, funcC
 }
 
 // TestGetResult is Redis specific test to get result from backend
@@ -78,11 +80,12 @@ func TestSetResult(t *testing.T) {
 
 // TestSetGetResult tests set/get result feature for all backends
 func TestSetGetResult(t *testing.T) {
-	for _, backend := range getBackends() {
+	backends, funcC := getBackends(t)
+	defer funcC()
+	for _, backend := range backends {
 		taskID := generateUUID()
 		value := reflect.ValueOf(rand.Float64())
 		resultMessage := getReflectionResultMessage(&value)
-		defer releaseResultMessage(resultMessage)
 		// set result
 		err := backend.SetResult(taskID, resultMessage)
 		if err != nil {
@@ -96,5 +99,7 @@ func TestSetGetResult(t *testing.T) {
 		if !reflect.DeepEqual(res, resultMessage) {
 			t.Errorf("result message received %v is different from original %v", res, resultMessage)
 		}
+
+		releaseResultMessage(resultMessage)
 	}
 }

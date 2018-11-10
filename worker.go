@@ -14,7 +14,7 @@ type CeleryWorker struct {
 	broker          CeleryBroker
 	backend         CeleryBackend
 	numWorkers      int
-	waitTimeMS		int
+	waitTimeMS      int
 	registeredTasks map[string]interface{}
 	taskLock        sync.RWMutex
 	stopChannel     chan struct{}
@@ -28,7 +28,7 @@ func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int,
 		backend:         backend,
 		numWorkers:      numWorkers,
 		registeredTasks: make(map[string]interface{}),
-		waitTimeMS: 	 waitTimeMS,
+		waitTimeMS:      waitTimeMS,
 	}
 }
 
@@ -37,17 +37,17 @@ func (w *CeleryWorker) StartWorker() {
 
 	w.stopChannel = make(chan struct{})
 	w.workWG.Add(w.numWorkers)
+	ticker := time.NewTicker(time.Millisecond * time.Duration(w.waitTimeMS))
 
 	for i := 0; i < w.numWorkers; i++ {
 		go func(workerID int) {
 			defer w.workWG.Done()
 			for {
-				time.Sleep(time.Duration(w.waitTimeMS) * time.Millisecond)
 				select {
 				case <-w.stopChannel:
+					ticker.Stop()
 					return
-				default:
-
+				case <-ticker.C:
 					// process messages
 					taskMessage, err := w.broker.GetTaskMessage()
 					if err != nil || taskMessage == nil {
@@ -62,14 +62,15 @@ func (w *CeleryWorker) StartWorker() {
 						log.Println(err)
 						continue
 					}
-					defer releaseResultMessage(resultMsg)
 
 					// push result to backend
 					err = w.backend.SetResult(taskMessage.ID, resultMsg)
 					if err != nil {
 						log.Println(err)
-						continue
 					}
+
+					// release the result resources
+					releaseResultMessage(resultMsg)
 				}
 			}
 		}(i)
@@ -149,7 +150,7 @@ func runTaskFunc(taskFunc *reflect.Value, message *TaskMessage) (*ResultMessage,
 	numArgs := taskFunc.Type().NumIn()
 	messageNumArgs := len(message.Args)
 	if numArgs != messageNumArgs {
-		return nil, fmt.Errorf("Number of task arguments %d does not match number of message arguments %d", numArgs, messageNumArgs)
+		return nil, fmt.Errorf("number of task arguments %d does not match number of message arguments %d", numArgs, messageNumArgs)
 	}
 	// construct arguments
 	in := make([]reflect.Value, messageNumArgs)
