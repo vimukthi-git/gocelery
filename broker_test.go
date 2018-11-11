@@ -23,7 +23,7 @@ func getBrokers(t *testing.T) ([]CeleryBroker, func()) {
 	levelDB, funcC := getLevelDB(t)
 	return []CeleryBroker{
 		NewRedisCeleryBroker("redis://localhost:6379"),
-		//NewAMQPCeleryBroker("amqp://"),
+		NewAMQPCeleryBroker("amqp://"),
 		NewInMemoryBroker(),
 		NewLevelDBBroker(levelDB, "test"),
 	}, funcC

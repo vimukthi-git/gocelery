@@ -108,14 +108,14 @@ func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	//amqpClient, err := getAMQPClient()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//inMemoryClient, err := getInMemoryClient(1)
-	//if err != nil {
-	//	return nil, err
-	//}
+	amqpClient, err := getAMQPClient()
+	if err != nil {
+		return nil, err
+	}
+	inMemoryClient, err := getInMemoryClient(1)
+	if err != nil {
+		return nil, err
+	}
 
 	levelDBClient, err := getLevelDBClient(1, db, queue)
 	if err != nil {
@@ -124,8 +124,8 @@ func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 
 	return []*CeleryClient{
 		redisClient,
-		//amqpClient,
-		//inMemoryClient,
+		amqpClient,
+		inMemoryClient,
 		levelDBClient,
 	}, nil
 }
@@ -293,9 +293,10 @@ func TestCeleryWorker_RunTaskTaskCopyError(t *testing.T) {
 	inMemoryClient.StopWorker()
 }
 
-/*
 func TestBlockingGet(t *testing.T) {
-	celeryClients, err := getClients()
+	levelDB, funcC := getLevelDB(t)
+	defer funcC()
+	celeryClients, err := getClients(levelDB, "test")
 	if err != nil {
 		t.Errorf("failed to create CeleryClients: %v", err)
 		return
@@ -325,7 +326,6 @@ func TestBlockingGet(t *testing.T) {
 
 	}
 }
-*/
 
 func convertInterface(val interface{}) int {
 	f, ok := val.(float64)
