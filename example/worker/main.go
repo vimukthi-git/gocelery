@@ -57,7 +57,7 @@ func main() {
 	//celeryBackend := gocelery.NewAMQPCeleryBackend("amqp://")
 
 	// Configure with 2 celery workers
-	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 2, 100)
+	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 2, )
 
 	// worker.add name reflects "add" task method found in "worker.py"
 	// this worker uses args
