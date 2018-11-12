@@ -182,6 +182,10 @@ func (rm *ResultMessage) reset() {
 	rm.Result = nil
 }
 
+func (rm *ResultMessage) copy() *ResultMessage {
+	return &ResultMessage{rm.ID, rm.Status, rm.Traceback, rm.Result, rm.Children}
+}
+
 var resultMessagePool = sync.Pool{
 	New: func() interface{} {
 		return &ResultMessage{

@@ -1,6 +1,9 @@
 package gocelery
 
-import "sync"
+import (
+	"sync"
+	"errors"
+)
 
 type InMemoryBroker struct {
 	taskQueue []*TaskMessage
@@ -23,7 +26,7 @@ func (b *InMemoryBroker) GetTaskMessage() (t *TaskMessage, e error) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if len(b.taskQueue) == 0 {
-		return nil, nil
+		return nil, errors.New("Empty queue")
 	}
 	t, b.taskQueue = b.taskQueue[0], b.taskQueue[1:]
 	return t, nil

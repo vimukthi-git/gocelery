@@ -25,7 +25,7 @@ func (b *InMemoryBackend) GetResult(taskID string) (*ResultMessage, error) {
 
 func (b *InMemoryBackend) SetResult(taskID string, result *ResultMessage) error {
 	b.lock.Lock()
-	b.ResultStore[taskID] = result
+	b.ResultStore[taskID] = result.copy()
 	b.lock.Unlock()
 	return nil
 }
