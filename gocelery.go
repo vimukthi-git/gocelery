@@ -25,11 +25,11 @@ type CeleryBackend interface {
 }
 
 // NewCeleryClient creates new celery client
-func NewCeleryClient(broker CeleryBroker, backend CeleryBackend, numWorkers int, workerWaitTimeMicroS int) (*CeleryClient, error) {
+func NewCeleryClient(broker CeleryBroker, backend CeleryBackend, numWorkers int, workerWaitTimeMS int) (*CeleryClient, error) {
 	return &CeleryClient{
 		broker,
 		backend,
-		NewCeleryWorker(broker, backend, numWorkers, workerWaitTimeMicroS),
+		NewCeleryWorker(broker, backend, numWorkers, workerWaitTimeMS),
 	}, nil
 }
 

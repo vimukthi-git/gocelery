@@ -108,25 +108,25 @@ func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	amqpClient, err := getAMQPClient()
-	if err != nil {
-		return nil, err
-	}
+	//amqpClient, err := getAMQPClient()
+	//if err != nil {
+	//	return nil, err
+	//}
 	inMemoryClient, err := getInMemoryClient(1)
 	if err != nil {
 		return nil, err
 	}
 
-	//levelDBClient, err := getLevelDBClient(1, db, queue)
-	//if err != nil {
-	//	return nil, err
-	//}
+	levelDBClient, err := getLevelDBClient(1, db, queue)
+	if err != nil {
+		return nil, err
+	}
 
 	return []*CeleryClient{
 		redisClient,
-		amqpClient,
+		//amqpClient,
 		inMemoryClient,
-		//levelDBClient,
+		levelDBClient,
 	}, nil
 }
 
