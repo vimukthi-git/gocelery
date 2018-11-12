@@ -82,25 +82,25 @@ func (st *stateFulTask) RunTask() (interface{}, error) {
 func getAMQPClient() (*CeleryClient, error) {
 	amqpBroker := NewAMQPCeleryBroker("amqp://")
 	amqpBackend := NewAMQPCeleryBackend("amqp://")
-	return NewCeleryClient(amqpBroker, amqpBackend, 4, 1)
+	return NewCeleryClient(amqpBroker, amqpBackend, 4, 100)
 }
 
 func getRedisClient() (*CeleryClient, error) {
 	redisBroker := NewRedisCeleryBroker("redis://localhost:6379")
 	redisBackend := NewRedisCeleryBackend("redis://localhost:6379")
-	return NewCeleryClient(redisBroker, redisBackend, 1, 1)
+	return NewCeleryClient(redisBroker, redisBackend, 1, 100)
 }
 
 func getInMemoryClient(numWorkers int) (*CeleryClient, error) {
 	inMemoryBroker := NewInMemoryBroker()
 	inMemoryBackend := NewInMemoryBackend()
-	return NewCeleryClient(inMemoryBroker, inMemoryBackend, numWorkers, 1)
+	return NewCeleryClient(inMemoryBroker, inMemoryBackend, numWorkers, 100)
 }
 
 func getLevelDBClient(numWorkers int, db *leveldb.DB, queue string) (*CeleryClient, error) {
 	broker := NewLevelDBBroker(db, queue)
 	backend := NewLevelDBBackend(db)
-	return NewCeleryClient(broker, backend, numWorkers, 1)
+	return NewCeleryClient(broker, backend, numWorkers, 100)
 }
 
 func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {

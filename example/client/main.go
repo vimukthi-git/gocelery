@@ -23,7 +23,7 @@ func main() {
 	//celeryBackend := gocelery.NewAMQPCeleryBackend("amqp://")
 
 	// create client
-	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 0)
+	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 0, 100)
 
 	arg1 := rand.Intn(10)
 	arg2 := rand.Intn(10)
