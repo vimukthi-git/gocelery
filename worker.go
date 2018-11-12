@@ -14,7 +14,7 @@ type CeleryWorker struct {
 	broker          CeleryBroker
 	backend         CeleryBackend
 	numWorkers      int
-	waitTimeMS      int
+	waitTimeMicroS  int
 	registeredTasks map[string]interface{}
 	taskLock        sync.RWMutex
 	stopChannel     chan struct{}
@@ -22,13 +22,13 @@ type CeleryWorker struct {
 }
 
 // NewCeleryWorker returns new celery worker
-func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int, waitTimeMS int) *CeleryWorker {
+func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int, waitTimeMicroS int) *CeleryWorker {
 	return &CeleryWorker{
 		broker:          broker,
 		backend:         backend,
 		numWorkers:      numWorkers,
 		registeredTasks: make(map[string]interface{}),
-		waitTimeMS:      waitTimeMS,
+		waitTimeMicroS:  waitTimeMicroS,
 	}
 }
 
@@ -37,7 +37,7 @@ func (w *CeleryWorker) StartWorker() {
 
 	w.stopChannel = make(chan struct{})
 	w.workWG.Add(w.numWorkers)
-	ticker := time.NewTicker(time.Millisecond * time.Duration(w.waitTimeMS))
+	ticker := time.NewTicker(time.Microsecond * time.Duration(w.waitTimeMicroS))
 
 	for i := 0; i < w.numWorkers; i++ {
 		go func(workerID int) {
