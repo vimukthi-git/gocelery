@@ -7,21 +7,19 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// RedisCeleryBackend is CeleryBackend for Redis
-type RedisCeleryBackend struct {
+// redisCeleryBackend is CeleryBackend for Redis
+type redisCeleryBackend struct {
 	*redis.Pool
 }
 
-// NewRedisCeleryBackend creates new RedisCeleryBackend
-func NewRedisCeleryBackend(uri string) *RedisCeleryBackend {
-	return &RedisCeleryBackend{
-		Pool: NewRedisPool(uri),
-	}
+// NewRedisCeleryBackend creates new redisCeleryBackend
+func NewRedisCeleryBackend(uri string) CeleryBackend {
+	return &redisCeleryBackend{Pool: newRedisPool(uri)}
 }
 
 // GetResult calls API to get asynchronous result
 // Should be called by AsyncResult
-func (cb *RedisCeleryBackend) GetResult(taskID string) (*ResultMessage, error) {
+func (cb *redisCeleryBackend) GetResult(taskID string) (*ResultMessage, error) {
 	//"celery-task-meta-" + taskID
 	conn := cb.Get()
 	defer conn.Close()
@@ -32,16 +30,18 @@ func (cb *RedisCeleryBackend) GetResult(taskID string) (*ResultMessage, error) {
 	if val == nil {
 		return nil, fmt.Errorf("result not available")
 	}
-	var resultMessage ResultMessage
-	err = json.Unmarshal(val.([]byte), &resultMessage)
+
+	result := new(ResultMessage)
+	err = json.Unmarshal(val.([]byte), result)
 	if err != nil {
 		return nil, err
 	}
-	return &resultMessage, nil
+
+	return result, nil
 }
 
 // SetResult pushes result back into backend
-func (cb *RedisCeleryBackend) SetResult(taskID string, result *ResultMessage) error {
+func (cb *redisCeleryBackend) SetResult(taskID string, result *ResultMessage) error {
 	resBytes, err := json.Marshal(result)
 	if err != nil {
 		return err

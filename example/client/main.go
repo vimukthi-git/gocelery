@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gocelery/gocelery"
+	"github.com/centrifuge/gocelery"
 )
 
 // Run Celery Worker First!
@@ -23,12 +23,15 @@ func main() {
 	//celeryBackend := gocelery.NewAMQPCeleryBackend("amqp://")
 
 	// create client
-	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 0)
+	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 0, 0)
 
 	arg1 := rand.Intn(10)
 	arg2 := rand.Intn(10)
 
-	asyncResult, err := celeryClient.Delay("worker.add", arg1, arg2)
+	asyncResult, err := celeryClient.Delay(gocelery.Task{
+		Name: "worker.add",
+		Args: []interface{}{arg1, arg2},
+	})
 	if err != nil {
 		panic(err)
 	}

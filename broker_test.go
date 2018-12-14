@@ -8,7 +8,7 @@ import (
 )
 
 func makeCeleryMessage() (*CeleryMessage, error) {
-	taskMessage := getTaskMessage("add")
+	taskMessage := getTaskMessage(Task{Name: "add"})
 	taskMessage.Args = []interface{}{rand.Intn(10), rand.Intn(10)}
 	defer releaseTaskMessage(taskMessage)
 	encodedTaskMessage, err := taskMessage.Encode()
@@ -23,7 +23,6 @@ func getBrokers(t *testing.T) ([]CeleryBroker, func()) {
 	levelDB, funcC := getLevelDB(t)
 	return []CeleryBroker{
 		NewRedisCeleryBroker("redis://localhost:6379"),
-		NewAMQPCeleryBroker("amqp://"),
 		NewInMemoryBroker(),
 		NewLevelDBBroker(levelDB, "test"),
 	}, funcC
@@ -32,18 +31,20 @@ func getBrokers(t *testing.T) ([]CeleryBroker, func()) {
 // TestSend is Redis specific test that sets CeleryMessage to queue
 func TestSend(t *testing.T) {
 	broker := NewRedisCeleryBroker("redis://localhost:6379")
-	celeryMessage, err := makeCeleryMessage()
-	if err != nil || celeryMessage == nil {
+	msg, err := makeCeleryMessage()
+	if err != nil || msg == nil {
 		t.Errorf("failed to construct celery message: %v", err)
 	}
-	defer releaseCeleryMessage(celeryMessage)
-	err = broker.SendCeleryMessage(celeryMessage)
+	defer releaseCeleryMessage(msg)
+	err = broker.SendCeleryMessage(msg)
 	if err != nil {
 		t.Errorf("failed to send celery message to broker: %v", err)
 	}
-	conn := broker.Get()
+
+	redisBroker := broker.(*redisCeleryBroker)
+	conn := redisBroker.Get()
 	defer conn.Close()
-	messageJSON, err := conn.Do("BLPOP", broker.queueName, "1")
+	messageJSON, err := conn.Do("BLPOP", redisBroker.queueName, "1")
 	if err != nil || messageJSON == nil {
 		t.Errorf("failed to get celery message from broker: %v", err)
 	}
@@ -54,8 +55,8 @@ func TestSend(t *testing.T) {
 	// parse celery message
 	var message CeleryMessage
 	json.Unmarshal(messageList[1].([]byte), &message)
-	if !reflect.DeepEqual(celeryMessage, &message) {
-		t.Errorf("received message %v different from original message %v", &message, celeryMessage)
+	if !reflect.DeepEqual(msg, &message) {
+		t.Errorf("received message %v different from original message %v", &message, msg)
 	}
 }
 
@@ -71,14 +72,16 @@ func TestGet(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to marshal celery message: %v", err)
 	}
-	conn := broker.Get()
+
+	redisBroker := broker.(*redisCeleryBroker)
+	conn := redisBroker.Get()
 	defer conn.Close()
-	_, err = conn.Do("LPUSH", broker.queueName, jsonBytes)
+	_, err = conn.Do("LPUSH", redisBroker.queueName, jsonBytes)
 	if err != nil {
 		t.Errorf("failed to push celery message to redis: %v", err)
 	}
 	// test Get
-	message, err := broker.GetCeleryMessage()
+	message, err := redisBroker.getCeleryMessage()
 	if err != nil {
 		t.Errorf("failed to get celery message from broker: %v", err)
 	}

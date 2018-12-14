@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -79,12 +80,6 @@ func (st *stateFulTask) RunTask() (interface{}, error) {
 	return st.state["val"], nil
 }
 
-func getAMQPClient() (*CeleryClient, error) {
-	amqpBroker := NewAMQPCeleryBroker("amqp://")
-	amqpBackend := NewAMQPCeleryBackend("amqp://")
-	return NewCeleryClient(amqpBroker, amqpBackend, 4, 1)
-}
-
 func getRedisClient() (*CeleryClient, error) {
 	redisBroker := NewRedisCeleryBroker("redis://localhost:6379")
 	redisBackend := NewRedisCeleryBackend("redis://localhost:6379")
@@ -108,10 +103,7 @@ func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	amqpClient, err := getAMQPClient()
-	if err != nil {
-		return nil, err
-	}
+
 	inMemoryClient, err := getInMemoryClient(1)
 	if err != nil {
 		return nil, err
@@ -124,7 +116,6 @@ func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 
 	return []*CeleryClient{
 		redisClient,
-		amqpClient,
 		inMemoryClient,
 		levelDBClient,
 	}, nil
@@ -171,16 +162,19 @@ func TestWorkerClient(t *testing.T) {
 				expected := arg1 * arg2
 
 				debugLog(celeryClient, "submitting tasks")
-				kwargAsyncResult, err := celeryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
-					"a": arg1,
-					"b": arg2,
+				kwargAsyncResult, err := celeryClient.Delay(Task{
+					Name: kwargTaskName,
+					Kwargs: map[string]interface{}{
+						"a": arg1,
+						"b": arg2,
+					},
 				})
 				if err != nil {
 					t.Errorf("failed to submit kwarg task %s: %v", kwargTaskName, err)
 					return
 				}
 
-				argAsyncResult, err := celeryClient.Delay(argTaskName, arg1, arg2)
+				argAsyncResult, err := celeryClient.Delay(Task{Name: argTaskName, Args: []interface{}{arg1, arg2}})
 				if err != nil {
 					t.Errorf("failed to submit arg task %s: %v", argTaskName, err)
 					return
@@ -252,13 +246,13 @@ func TestCeleryWorker_RunTaskTaskCopy(t *testing.T) {
 	inMemoryClient.Register(kwargTaskName, kwargTask)
 	inMemoryClient.StartWorker()
 
-	res1, _ := inMemoryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
+	res1, _ := inMemoryClient.Delay(Task{Name: kwargTaskName, Kwargs: map[string]interface{}{
 		"val": generateUUID(),
-	})
+	}})
 
-	res2, _ := inMemoryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
+	res2, _ := inMemoryClient.Delay(Task{Name: kwargTaskName, Kwargs: map[string]interface{}{
 		"val": generateUUID(),
-	})
+	}})
 
 	// following should not cause any race conditions with -race flag
 	// because the workers copy the tasks
@@ -280,9 +274,9 @@ func TestCeleryWorker_RunTaskTaskCopyError(t *testing.T) {
 	inMemoryClient.Register(kwargTaskName, kwargTask)
 	inMemoryClient.StartWorker()
 
-	res1, _ := inMemoryClient.DelayKwargs(kwargTaskName, map[string]interface{}{
+	res1, _ := inMemoryClient.Delay(Task{Name: kwargTaskName, Kwargs: map[string]interface{}{
 		"val": generateUUID(),
-	})
+	}})
 
 	res, _ := res1.Get(1 * time.Millisecond)
 	// there should not be any result
@@ -305,7 +299,7 @@ func TestBlockingGet(t *testing.T) {
 	for _, celeryClient := range celeryClients {
 
 		// send task
-		asyncResult, err := celeryClient.Delay("dummy", 3, 5)
+		asyncResult, err := celeryClient.Delay(Task{Name: "dummy", Args: []interface{}{3, 5}})
 		if err != nil {
 			t.Errorf("failed to get async result")
 			return
@@ -313,12 +307,14 @@ func TestBlockingGet(t *testing.T) {
 
 		duration := 1 * time.Second
 		var asyncError error
-
+		wg := new(sync.WaitGroup)
+		wg.Add(1)
 		go func() {
 			_, asyncError = asyncResult.Get(duration)
+			wg.Done()
 		}()
 
-		time.Sleep(duration + time.Millisecond)
+		wg.Wait()
 		if asyncError == nil {
 			t.Errorf("failed to timeout in time")
 			return

@@ -8,10 +8,6 @@
   version = "2.0.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/streadway/amqp"
-
-[[constraint]]
   name = "github.com/syndtr/goleveldb"
   revision = "f9080354173f192dfc8821931eacf9cfd6819253"
 

@@ -27,11 +27,11 @@ func TestInMemoryBroker_Concurrency(t *testing.T) {
 }
 
 func testMastersWorkers(numMasters int, numWorkers int, numMessagesPerMaster int, t *testing.T) {
-	ib := NewInMemoryBroker()
+	ib := NewInMemoryBroker().(*inMemoryBroker)
 	// create worker go routines that receive messages
 	resultChannel := make(chan string)
 	for i := 0; i < numWorkers; i++ {
-		go receiveMessages(ib, resultChannel)
+		go receiveMessages(ib, resultChannel, numMasters*numMessagesPerMaster)
 	}
 	// make the messages
 	ids := make(map[string]bool)
@@ -79,21 +79,26 @@ func checkMessages(t *testing.T, resultChannel chan string, ids map[string]bool,
 	}
 }
 
-func receiveMessages(ib *InMemoryBroker, resultChannel chan string) {
+func receiveMessages(ib *inMemoryBroker, resultChannel chan string, totalMsgs int) {
 	// wait for messages to become available from masters, otherwise the workers will exit too early
 	time.Sleep(10 * time.Millisecond)
-	for !ib.isEmpty() {
+	c := 0
+	for c < totalMsgs {
 		msg, err := ib.GetTaskMessage()
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		if msg == nil {
+			continue
+		}
+
 		resultChannel <- msg.ID
-		// less than this and workers try to access invalid memory addresses
-		time.Sleep(100 * time.Microsecond)
+		c++
 	}
 }
 
-func putMessages(ib *InMemoryBroker, messages []*CeleryMessage, masterFinished chan<- bool) {
+func putMessages(ib *inMemoryBroker, messages []*CeleryMessage, masterFinished chan<- bool) {
 	for i := 0; i < len(messages); i++ {
 		ib.SendCeleryMessage(messages[i])
 	}

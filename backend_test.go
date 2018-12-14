@@ -12,7 +12,6 @@ func getBackends(t *testing.T) ([]CeleryBackend, func()) {
 	levelDB, funcC := getLevelDB(t)
 	return []CeleryBackend{
 		NewRedisCeleryBackend("redis://localhost:6379"),
-		NewAMQPCeleryBackend("amqp://"),
 		NewInMemoryBackend(),
 		NewLevelDBBackend(levelDB),
 	}, funcC
@@ -31,7 +30,7 @@ func TestGetResult(t *testing.T) {
 	if err != nil {
 		t.Errorf("error marshalling result message: %v", err)
 	}
-	conn := backend.Get()
+	conn := backend.(*redisCeleryBackend).Get()
 	defer conn.Close()
 	_, err = conn.Do("SETEX", fmt.Sprintf("celery-task-meta-%s", taskID), 86400, messageBytes)
 	if err != nil {
@@ -52,14 +51,14 @@ func TestSetResult(t *testing.T) {
 	backend := NewRedisCeleryBackend("redis://localhost:6379")
 	taskID := generateUUID()
 	value := reflect.ValueOf(rand.Float64())
-	resultMessage := getReflectionResultMessage(&value)
-	releaseResultMessage(resultMessage)
+	result := getReflectionResultMessage(&value)
+	releaseResultMessage(result)
 	// set result
-	err := backend.SetResult(taskID, resultMessage)
+	err := backend.SetResult(taskID, result)
 	if err != nil {
 		t.Errorf("error setting result to backend: %v", err)
 	}
-	conn := backend.Get()
+	conn := backend.(*redisCeleryBackend).Get()
 	defer conn.Close()
 	val, err := conn.Do("GET", fmt.Sprintf("celery-task-meta-%s", taskID))
 	if err != nil {
@@ -73,8 +72,8 @@ func TestSetResult(t *testing.T) {
 	if err != nil {
 		t.Errorf("error parsing json result")
 	}
-	if !reflect.DeepEqual(&res, resultMessage) {
-		t.Errorf("result message received %v is different from original %v", &res, resultMessage)
+	if !reflect.DeepEqual(&res, result) {
+		t.Errorf("result message received %v is different from original %v", &res, result)
 	}
 }
 

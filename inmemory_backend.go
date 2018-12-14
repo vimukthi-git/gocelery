@@ -5,16 +5,18 @@ import (
 	"sync"
 )
 
-type InMemoryBackend struct {
+type inMemoryBackend struct {
 	ResultStore map[string]*ResultMessage
 	lock        sync.RWMutex
 }
 
-func NewInMemoryBackend() *InMemoryBackend {
-	return &InMemoryBackend{make(map[string]*ResultMessage), sync.RWMutex{}}
+// NewInMemoryBackend returns a CeleryBackend implemented InMemory.
+func NewInMemoryBackend() CeleryBackend {
+	return &inMemoryBackend{make(map[string]*ResultMessage), sync.RWMutex{}}
 }
 
-func (b *InMemoryBackend) GetResult(taskID string) (*ResultMessage, error) {
+// GetResult returns the result
+func (b *inMemoryBackend) GetResult(taskID string) (*ResultMessage, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	if res, ok := b.ResultStore[taskID]; ok {
@@ -23,13 +25,16 @@ func (b *InMemoryBackend) GetResult(taskID string) (*ResultMessage, error) {
 	return nil, errors.New("task does not exist")
 }
 
-func (b *InMemoryBackend) SetResult(taskID string, result *ResultMessage) error {
+func (b *inMemoryBackend) SetResult(taskID string, res *ResultMessage) error {
 	b.lock.Lock()
-	b.ResultStore[taskID] = result
-	b.lock.Unlock()
+	defer b.lock.Unlock()
+	result := *res
+	b.ResultStore[taskID] = &result
 	return nil
 }
 
-func (b *InMemoryBackend) Clear() {
+func (b *inMemoryBackend) Clear() {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	b.ResultStore = make(map[string]*ResultMessage)
 }

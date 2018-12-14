@@ -1,25 +1,27 @@
 package gocelery
 
-import "sync"
+import (
+	"sync"
+)
 
-type InMemoryBroker struct {
+type inMemoryBroker struct {
 	taskQueue []*TaskMessage
 	lock      sync.RWMutex
 }
 
-func NewInMemoryBroker() *InMemoryBroker {
-	return &InMemoryBroker{make([]*TaskMessage, 0), sync.RWMutex{}}
+// NewInMemoryBroker returns immeory backed CeleryBroker
+func NewInMemoryBroker() CeleryBroker {
+	return &inMemoryBroker{make([]*TaskMessage, 0), sync.RWMutex{}}
 }
 
-func (b *InMemoryBroker) SendCeleryMessage(m *CeleryMessage) error {
-	// this could be a bit too inefficient, for we can do sharding or use sync.Map later
+func (b *inMemoryBroker) SendCeleryMessage(m *CeleryMessage) error {
 	b.lock.Lock()
+	defer b.lock.Unlock()
 	b.taskQueue = append(b.taskQueue, m.GetTaskMessage())
-	b.lock.Unlock()
 	return nil
 }
 
-func (b *InMemoryBroker) GetTaskMessage() (t *TaskMessage, e error) {
+func (b *inMemoryBroker) GetTaskMessage() (t *TaskMessage, e error) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if len(b.taskQueue) == 0 {
@@ -29,14 +31,14 @@ func (b *InMemoryBroker) GetTaskMessage() (t *TaskMessage, e error) {
 	return t, nil
 }
 
-func (b *InMemoryBroker) Clear() error {
+func (b *inMemoryBroker) Clear() error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.taskQueue = make([]*TaskMessage, 0)
 	return nil
 }
 
-func (b *InMemoryBroker) isEmpty() bool {
+func (b *inMemoryBroker) isEmpty() bool {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	return len(b.taskQueue) == 0

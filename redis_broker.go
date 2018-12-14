@@ -9,16 +9,16 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// RedisCeleryBroker is CeleryBroker for Redis
-type RedisCeleryBroker struct {
+// redisCeleryBroker is CeleryBroker for Redis
+type redisCeleryBroker struct {
 	*redis.Pool
 	queueName   string
 	stopChannel chan bool
 	workWG      sync.WaitGroup
 }
 
-// NewRedisPool creates pool of redis connections from given uri
-func NewRedisPool(uri string) *redis.Pool {
+// newRedisPool creates pool of redis connections from given uri
+func newRedisPool(uri string) *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -36,16 +36,16 @@ func NewRedisPool(uri string) *redis.Pool {
 	}
 }
 
-// NewRedisCeleryBroker creates new RedisCeleryBroker based on given uri
-func NewRedisCeleryBroker(uri string) *RedisCeleryBroker {
-	return &RedisCeleryBroker{
-		Pool:      NewRedisPool(uri),
+// NewRedisCeleryBroker creates new redisCeleryBroker based on given uri
+func NewRedisCeleryBroker(uri string) CeleryBroker {
+	return &redisCeleryBroker{
+		Pool:      newRedisPool(uri),
 		queueName: "celery",
 	}
 }
 
 // SendCeleryMessage sends CeleryMessage to redis queue
-func (cb *RedisCeleryBroker) SendCeleryMessage(message *CeleryMessage) error {
+func (cb *redisCeleryBroker) SendCeleryMessage(message *CeleryMessage) error {
 	jsonBytes, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -59,8 +59,8 @@ func (cb *RedisCeleryBroker) SendCeleryMessage(message *CeleryMessage) error {
 	return nil
 }
 
-// GetCeleryMessage retrieves celery message from redis queue
-func (cb *RedisCeleryBroker) GetCeleryMessage() (*CeleryMessage, error) {
+// getCeleryMessage retrieves celery message from redis queue
+func (cb *redisCeleryBroker) getCeleryMessage() (*CeleryMessage, error) {
 	conn := cb.Get()
 	defer conn.Close()
 	messageJSON, err := conn.Do("BLPOP", cb.queueName, "1")
@@ -82,8 +82,8 @@ func (cb *RedisCeleryBroker) GetCeleryMessage() (*CeleryMessage, error) {
 }
 
 // GetTaskMessage retrieves task message from redis queue
-func (cb *RedisCeleryBroker) GetTaskMessage() (*TaskMessage, error) {
-	celeryMessage, err := cb.GetCeleryMessage()
+func (cb *redisCeleryBroker) GetTaskMessage() (*TaskMessage, error) {
+	celeryMessage, err := cb.getCeleryMessage()
 	if err != nil {
 		return nil, err
 	}

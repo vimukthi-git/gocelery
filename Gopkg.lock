@@ -11,14 +11,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2c009a43347d80ee0e6f3a79f0865b4003df7dcdff15450f941aa9162baf933e"
-  name = "github.com/gocelery/gocelery"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "b2f0dd7ec05bbc742030962676dcd27d62cea6d1"
-
-[[projects]]
-  branch = "master"
   digest = "1:4a0c6bb4805508a6287675fac876be2ac1182539ca8a32468d8128882e9d5009"
   name = "github.com/golang/snappy"
   packages = ["."]
@@ -53,14 +45,6 @@
   revision = "b2ce2384e17bbe0c6d34077efa39dbab3e09123b"
 
 [[projects]]
-  branch = "master"
-  digest = "1:68284c262f45718a220f7e817c2125a0f20eb3924be5074fa187ff7bc600c47e"
-  name = "github.com/streadway/amqp"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "27835f1a64e97101d95306211f03c0620ffa295d"
-
-[[projects]]
   digest = "1:18752d0b95816a1b777505a97f71c7467a8445b8ffb55631a7bf779f6ba4fa83"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
@@ -92,10 +76,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/gocelery/gocelery",
     "github.com/gomodule/redigo/redis",
     "github.com/satori/go.uuid",
-    "github.com/streadway/amqp",
     "github.com/stretchr/testify/assert",
     "github.com/syndtr/goleveldb/leveldb",
   ]

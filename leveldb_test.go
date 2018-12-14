@@ -15,7 +15,7 @@ func getRandomTestStoragePath(t *testing.T) string {
 	n, err := cr.Read(r)
 	assert.Nil(t, err)
 	assert.Equal(t, n, 32)
-	return fmt.Sprintf("%s_%x", "/tmp/centrifuge_data.leveldb_TESTING", r)
+	return fmt.Sprintf("%s_%x", "/tmp/data.leveldb_TESTING", r)
 }
 
 func getLevelDB(t *testing.T) (*leveldb.DB, func()) {

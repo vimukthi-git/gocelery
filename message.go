@@ -9,13 +9,38 @@ import (
 	"time"
 )
 
+// defaultMaxTries is the default max retries.
+const defaultMaxTries = 3
+
+// TaskSettings can be passed to the task with specific overrides.
+type TaskSettings struct {
+	MaxTries int    `json:"max_tries"`
+	ETA      string `json:"eta"`
+}
+
+// DefaultSettings returns the TaskSettings with all the default values and will be used if the Task.Settings is nil.
+func DefaultSettings() *TaskSettings {
+	return &TaskSettings{
+		MaxTries: defaultMaxTries,
+		ETA:      time.Now().Format(time.RFC3339),
+	}
+}
+
+// Task represents a task gocelery receives from the client.
+type Task struct {
+	Name     string
+	Args     []interface{}
+	Kwargs   map[string]interface{}
+	Settings *TaskSettings // if Settings is nil, we fallback to default values
+}
+
 // CeleryMessage is actual message to be sent to Redis
 type CeleryMessage struct {
 	Body            string                 `json:"body"`
 	Headers         map[string]interface{} `json:"headers"`
-	ContentType     string                 `json:"content-type"`
+	ContentType     string                 `json:"content_type"`
 	Properties      CeleryProperties       `json:"properties"`
-	ContentEncoding string                 `json:"content-encoding"`
+	ContentEncoding string                 `json:"content_encoding"`
 }
 
 func (cm *CeleryMessage) reset() {
@@ -105,12 +130,12 @@ func (cm *CeleryMessage) GetTaskMessage() *TaskMessage {
 
 // TaskMessage is celery-compatible message
 type TaskMessage struct {
-	ID      string                 `json:"id"`
-	Task    string                 `json:"task"`
-	Args    []interface{}          `json:"args"`
-	Kwargs  map[string]interface{} `json:"kwargs"`
-	Retries int                    `json:"retries"`
-	ETA     string                 `json:"eta"`
+	ID       string                 `json:"id"`
+	Task     string                 `json:"task"`
+	Args     []interface{}          `json:"args"`
+	Kwargs   map[string]interface{} `json:"kwargs"`
+	Tries    int                    `json:"tries"`
+	Settings *TaskSettings          `json:"settings"`
 }
 
 func (tm *TaskMessage) reset() {
@@ -118,26 +143,36 @@ func (tm *TaskMessage) reset() {
 	tm.Task = ""
 	tm.Args = nil
 	tm.Kwargs = nil
+	tm.Tries = 0
+	tm.Settings = nil
 }
 
 var taskMessagePool = sync.Pool{
 	New: func() interface{} {
 		return &TaskMessage{
-			ID:      generateUUID(),
-			Retries: 0,
-			Kwargs:  nil,
-			ETA:     time.Now().Format(time.RFC3339),
+			ID:     generateUUID(),
+			Tries:  0,
+			Kwargs: nil,
 		}
 	},
 }
 
-func getTaskMessage(task string) *TaskMessage {
+func getTaskMessage(task Task) *TaskMessage {
 	msg := taskMessagePool.Get().(*TaskMessage)
-	msg.Task = task
-	msg.Args = make([]interface{}, 0)
-	msg.Kwargs = make(map[string]interface{})
-	msg.ETA = time.Now().Format(time.RFC3339)
+	msg.Task = task.Name
+	msg.Args = task.Args
+	msg.Kwargs = task.Kwargs
+
+	if task.Settings == nil {
+		task.Settings = DefaultSettings()
+	}
+	msg.Settings = task.Settings
 	return msg
+}
+
+// isRetryable to check if the task is retryable again.
+func (tm *TaskMessage) isRetryable() bool {
+	return tm.Tries < tm.Settings.MaxTries
 }
 
 func releaseTaskMessage(v *TaskMessage) {
@@ -171,24 +206,18 @@ func (tm *TaskMessage) Encode() (string, error) {
 
 // ResultMessage is return message received from broker
 type ResultMessage struct {
-	ID        string        `json:"task_id"`
-	Status    string        `json:"status"`
-	Traceback interface{}   `json:"traceback"`
-	Result    interface{}   `json:"result"`
-	Children  []interface{} `json:"children"`
+	Result interface{} `json:"result"`
+	Error  string      `json:"error"`
 }
 
 func (rm *ResultMessage) reset() {
 	rm.Result = nil
+	rm.Error = ""
 }
 
 var resultMessagePool = sync.Pool{
 	New: func() interface{} {
-		return &ResultMessage{
-			Status:    "SUCCESS",
-			Traceback: nil,
-			Children:  nil,
-		}
+		return &ResultMessage{}
 	},
 }
 

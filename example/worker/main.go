@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gocelery/gocelery"
+	"github.com/centrifuge/gocelery"
 )
 
 // Celery Task using args
@@ -57,7 +57,7 @@ func main() {
 	//celeryBackend := gocelery.NewAMQPCeleryBackend("amqp://")
 
 	// Configure with 2 celery workers
-	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 2)
+	celeryClient, _ := gocelery.NewCeleryClient(celeryBroker, celeryBackend, 2, 0)
 
 	// worker.add name reflects "add" task method found in "worker.py"
 	// this worker uses args
