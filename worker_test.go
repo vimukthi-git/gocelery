@@ -165,7 +165,7 @@ func runRetryableTask(t *testing.T, c *CeleryClient, task Task, expectedAttempts
 		t.Fatal(err)
 	}
 
-	_, err = res.Get(time.Second * 10)
+	_, err = res.Get(time.Second * 5 * time.Duration(expectedAttempts+1))
 	if err != nil {
 		if shouldFail {
 			return

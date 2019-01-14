@@ -65,8 +65,25 @@ func (cc *CeleryClient) Delay(task Task) (*AsyncResult, error) {
 		return nil, fmt.Errorf("either args or kwargs need to be set, but not both")
 	}
 
+	task.Settings = checkSettings(task.Settings)
 	celeryTask := getTaskMessage(task)
 	return cc.delay(celeryTask)
+}
+
+func checkSettings(s *TaskSettings) *TaskSettings {
+	if s == nil {
+		return DefaultSettings()
+	}
+
+	if s.MaxTries > MaxRetries {
+		s.MaxTries = MaxRetries
+	}
+
+	if s.Delay.IsZero() {
+		s.Delay = time.Now().UTC()
+	}
+
+	return s
 }
 
 func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {

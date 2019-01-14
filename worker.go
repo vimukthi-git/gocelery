@@ -56,46 +56,58 @@ func (w *CeleryWorker) StartWorker() {
 					return
 				case <-ticker.C:
 					// process messages
-					taskMessage, err := w.broker.GetTaskMessage()
-					if err != nil || taskMessage == nil {
+					task, err := w.broker.GetTaskMessage()
+					if err != nil || task == nil {
+						continue
+					}
+
+					// check if the we can run the task now
+					if time.Now().UTC().Before(task.Settings.Delay) {
+						w.reEnqueueTask(task)
 						continue
 					}
 
 					// run task
-					resultMsg, err := w.RunTask(taskMessage)
+					resultMsg, err := w.RunTask(task)
 					if err == nil {
 						// happy path
-						w.storeResult(taskMessage.ID, resultMsg)
+						w.storeResult(task.ID, resultMsg)
 
 						// release the result resources
 						releaseResultMessage(resultMsg)
 						continue
 					}
 
-					taskMessage.Tries++
-					if err != ErrTaskRetryable || !taskMessage.isRetryable() {
+					task.Tries++
+					if err != ErrTaskRetryable || !task.isRetryable() {
 						// not a retryable error. move on
 						res := getResultMessage(nil)
 						res.Error = err.Error()
-						w.storeResult(taskMessage.ID, res)
+						w.storeResult(task.ID, res)
 						releaseResultMessage(res)
 						continue
 					}
 
-					// retryable error enqueue the task again
-					enc, err := taskMessage.Encode()
-					if err != nil {
-						log.Println(fmt.Errorf("failed to encode Task Message: %v", err))
-						continue
-					}
-
-					err = w.broker.SendCeleryMessage(getCeleryMessage(enc))
-					if err != nil {
-						log.Println(fmt.Errorf("failed to enqueue Task: %v", err))
-					}
+					task.Settings.Delay = time.Now().UTC().Add(defaultBackOff * time.Duration(task.Tries))
+					log.Printf("retrying task after: %v\n", task.Settings.Delay)
+					w.reEnqueueTask(task)
 				}
 			}
 		}(i)
+	}
+}
+
+func (w *CeleryWorker) reEnqueueTask(task *TaskMessage) {
+	// retryable error enqueue the task again
+	enc, err := task.Encode()
+	if err != nil {
+		log.Println(fmt.Errorf("failed to encode Task Message: %v", err))
+		return
+	}
+
+	err = w.broker.SendCeleryMessage(getCeleryMessage(enc))
+	if err != nil {
+		log.Println(fmt.Errorf("failed to enqueue Task: %v", err))
 	}
 }
 

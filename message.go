@@ -9,20 +9,28 @@ import (
 	"time"
 )
 
-// defaultMaxTries is the default max retries.
-const defaultMaxTries = 3
+const (
+	// defaultMaxTries is the default max retries.
+	defaultMaxTries = 3
+
+	// MaxRetries runs the task until task stop returning ErrTaskRetryable
+	MaxRetries = 15
+
+	// defaultBackOff with current tries for back off
+	defaultBackOff = time.Second * 5
+)
 
 // TaskSettings can be passed to the task with specific overrides.
 type TaskSettings struct {
-	MaxTries int    `json:"max_tries"`
-	ETA      string `json:"eta"`
+	MaxTries uint      `json:"max_tries"`
+	Delay    time.Time `json:"delay"`
 }
 
 // DefaultSettings returns the TaskSettings with all the default values and will be used if the Task.Settings is nil.
 func DefaultSettings() *TaskSettings {
 	return &TaskSettings{
 		MaxTries: defaultMaxTries,
-		ETA:      time.Now().Format(time.RFC3339),
+		Delay:    time.Now().UTC(),
 	}
 }
 
@@ -134,7 +142,7 @@ type TaskMessage struct {
 	Task     string                 `json:"task"`
 	Args     []interface{}          `json:"args"`
 	Kwargs   map[string]interface{} `json:"kwargs"`
-	Tries    int                    `json:"tries"`
+	Tries    uint                   `json:"tries"`
 	Settings *TaskSettings          `json:"settings"`
 }
 

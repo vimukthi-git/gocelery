@@ -334,3 +334,39 @@ func convertInterface(val interface{}) int {
 	}
 	return val.(int)
 }
+
+func Test_checkSettings(t *testing.T) {
+	tests := []struct {
+		tries  uint
+		time   time.Time
+		eTries uint
+	}{
+		{
+			tries: 0,
+		},
+
+		{
+			tries:  20,
+			eTries: 15,
+		},
+
+		{
+			tries:  15,
+			time:   time.Now().UTC(),
+			eTries: 15,
+		},
+	}
+
+	for _, c := range tests {
+		s := TaskSettings{MaxTries: c.tries, Delay: c.time}
+		es := checkSettings(&s)
+
+		if c.eTries != es.MaxTries {
+			t.Fatalf("%v != %v", c.eTries, es.MaxTries)
+		}
+
+		if es.Delay.IsZero() {
+			t.Fatal("expected non zero time")
+		}
+	}
+}
