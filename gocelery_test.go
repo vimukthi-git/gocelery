@@ -3,7 +3,6 @@ package gocelery
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"reflect"
 	"sync"
@@ -76,7 +75,7 @@ func (st *stateFulTask) ParseKwargs(state map[string]interface{}) error {
 }
 
 func (st *stateFulTask) RunTask() (interface{}, error) {
-	log.Print(st.state["val"])
+	log.Info(st.state["val"])
 	return st.state["val"], nil
 }
 
@@ -123,7 +122,7 @@ func getClients(db *leveldb.DB, queue string) ([]*CeleryClient, error) {
 
 func debugLog(client *CeleryClient, format string, args ...interface{}) {
 	pre := fmt.Sprintf("client[%p] - ", client)
-	log.Printf(pre+format, args...)
+	log.Infof(pre+format, args...)
 }
 
 func TestWorkerClient(t *testing.T) {

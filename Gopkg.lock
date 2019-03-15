@@ -2,12 +2,28 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:6c7200e9917373ebe3c248ca47f9ee8a7924aa003c137cbfee2c763d7bc0643f"
+  name = "github.com/centrifuge/gocelery"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "fb11151a227ae41660e15f6c10e2e22eb1556531"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:48092bf6632f55839850666c33469f546f6d45fdbd59a66759ec12e84d853dc2"
+  name = "github.com/gogo/protobuf"
+  packages = ["proto"]
+  pruneopts = "UT"
+  revision = "ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -27,6 +43,47 @@
   pruneopts = "UT"
   revision = "9c11da706d9b7902c6da69c592f75637793fe121"
   version = "v2.0.0"
+
+[[projects]]
+  digest = "1:e8c78569402b8dcf846924dea6eb27b1de135c9a53d7adbd2629250ef66c021a"
+  name = "github.com/ipfs/go-log"
+  packages = [
+    ".",
+    "tracer",
+    "tracer/wire",
+    "writer",
+  ]
+  pruneopts = "UT"
+  revision = "91b837264c0f35dd4e2be341d711316b91d3573d"
+  version = "v0.0.1"
+
+[[projects]]
+  digest = "1:2fa7b0155cd54479a755c629de26f888a918e13f8857a2c442205d825368e084"
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3a70a971f94a22f2fa562ffcc7a0eb45f5daf045"
+  version = "v0.1.1"
+
+[[projects]]
+  digest = "1:e150b5fafbd7607e2d638e4e5cf43aa4100124e5593385147b0a74e2733d8b0d"
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c2a7a6ca930a4cd0bc33a3f298eb71960732a3a7"
+  version = "v0.0.7"
+
+[[projects]]
+  digest = "1:450b7623b185031f3a456801155c8320209f75d0d4c4e633c6b1e59d44d6e392"
+  name = "github.com/opentracing/opentracing-go"
+  packages = [
+    ".",
+    "ext",
+    "log",
+  ]
+  pruneopts = "UT"
+  revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
+  version = "v1.0.2"
 
 [[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
@@ -72,11 +129,37 @@
   pruneopts = "UT"
   revision = "f9080354173f192dfc8821931eacf9cfd6819253"
 
+[[projects]]
+  branch = "master"
+  digest = "1:0102dfa2f98777db8ff68c920bef1be3ff8504e90485b6cdd24d61b981b487b6"
+  name = "github.com/whyrusleeping/go-logging"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0457bb6b88fc1973573aaf6b5145d8d3ae972390"
+
+[[projects]]
+  branch = "master"
+  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  pruneopts = "UT"
+  revision = "9f648a60d9775ef5c977e7669d1673a7a67bef33"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f36c7b9a36158e62ffe5d8b02d1b5955500c13106cdaeebf5323d88863cae96f"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "fead79001313d15903fb4605b4a1b781532cd93e"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/centrifuge/gocelery",
     "github.com/gomodule/redigo/redis",
+    "github.com/ipfs/go-log",
     "github.com/satori/go.uuid",
     "github.com/stretchr/testify/assert",
     "github.com/syndtr/goleveldb/leveldb",

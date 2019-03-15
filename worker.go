@@ -2,11 +2,14 @@ package gocelery
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"sync"
 	"time"
+
+	logging "github.com/ipfs/go-log"
 )
+
+var log = logging.Logger("gocelery")
 
 // defaultWaitTime to fallback to if the provided waitTime is 0.
 const defaultWaitTime = 1
@@ -89,7 +92,7 @@ func (w *CeleryWorker) StartWorker() {
 					}
 
 					task.Settings.Delay = time.Now().UTC().Add(defaultBackOff * time.Duration(task.Tries))
-					log.Printf("retrying task after: %v\n", task.Settings.Delay)
+					log.Debugf("retrying task after: %v\n", task.Settings.Delay)
 					w.reEnqueueTask(task)
 				}
 			}
@@ -101,13 +104,13 @@ func (w *CeleryWorker) reEnqueueTask(task *TaskMessage) {
 	// retryable error enqueue the task again
 	enc, err := task.Encode()
 	if err != nil {
-		log.Println(fmt.Errorf("failed to encode Task Message: %v", err))
+		log.Errorf("failed to encode Task Message: %v", err)
 		return
 	}
 
 	err = w.broker.SendCeleryMessage(getCeleryMessage(enc))
 	if err != nil {
-		log.Println(fmt.Errorf("failed to enqueue Task: %v", err))
+		log.Errorf("failed to enqueue Task: %v", err)
 	}
 }
 
@@ -115,7 +118,7 @@ func (w *CeleryWorker) storeResult(taskID string, result *ResultMessage) {
 	// push result to backend
 	err := w.backend.SetResult(taskID, result)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 }
 

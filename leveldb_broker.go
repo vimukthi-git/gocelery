@@ -3,7 +3,6 @@ package gocelery
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -53,7 +52,7 @@ func (lbrk *levelDBBroker) loadBrokerState() {
 	state := new(levelDBBrokerState)
 	err = json.Unmarshal(data, state)
 	if err != nil {
-		log.Printf("failed to load the previous state from levelDB: %v\n", err)
+		log.Errorf("failed to load the previous state from levelDB: %v\n", err)
 		return
 	}
 

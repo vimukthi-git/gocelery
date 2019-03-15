@@ -3,7 +3,6 @@ package gocelery
 import (
 	"encoding/base64"
 	"encoding/json"
-	"log"
 	"reflect"
 	"sync"
 	"time"
@@ -114,23 +113,23 @@ type CeleryDeliveryInfo struct {
 func (cm *CeleryMessage) GetTaskMessage() *TaskMessage {
 	// ensure content-type is 'application/json'
 	if cm.ContentType != "application/json" {
-		log.Println("unsupported content type " + cm.ContentType)
+		log.Info("unsupported content type " + cm.ContentType)
 		return nil
 	}
 	// ensure body encoding is base64
 	if cm.Properties.BodyEncoding != "base64" {
-		log.Println("unsupported body encoding " + cm.Properties.BodyEncoding)
+		log.Info("unsupported body encoding " + cm.Properties.BodyEncoding)
 		return nil
 	}
 	// ensure content encoding is utf-8
 	if cm.ContentEncoding != "utf-8" {
-		log.Println("unsupported encoding " + cm.ContentEncoding)
+		log.Info("unsupported encoding " + cm.ContentEncoding)
 		return nil
 	}
 	// decode body
 	taskMessage, err := DecodeTaskMessage(cm.Body)
 	if err != nil {
-		log.Println("failed to decode task message")
+		log.Info("failed to decode task message")
 		return nil
 	}
 	return taskMessage

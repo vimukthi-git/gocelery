@@ -1,7 +1,6 @@
 package gocelery
 
 import (
-	"log"
 	"testing"
 	"time"
 )
